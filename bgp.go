@@ -23,8 +23,7 @@ import (
 	"net"
 	"os"
 	"strconv"
-
-	"github.com/osrg/gobgp/packet"
+	"github.com/osrg/gobgp/core"
 	"sync"
 )
 
@@ -44,24 +43,10 @@ type NeighborConfiguration struct {
 	RouteServerClient	bool
 }
 
-type CoreConfiguration struct {
-
-	ASNumber	int
-	RouterID	string
-}
-
-type CoreManager struct {
-
-	CoreConf	*CoreConfiguration
-	neighborsConf	[]*NeighborConfiguration
-	//vrfsConf		[]*VrfsConfiguration
-	started		bool
-
-}
 
 type BGPProcessor struct {
 
-	coreManager			*CoreManager
+	coreManager			*core.CoreManager
 	destChannel			*chan Destination
 	rtdestChannel		*chan Destination
 	WorkUnitsPerCycle	int
@@ -104,17 +89,6 @@ func (processor *BGPProcessor) processRtdest(dest Destination) error {
 	return nil
 }
 
-func (manager *CoreManager) start(wg *sync.WaitGroup){
-
-	processor := new(BGPProcessor)
-	processor.coreManager = manager
-	rtdestChannel := make(chan Destination, 10)
-	destChannel := make(chan Destination, 10)
-
-	processor.start(destChannel, rtdestChannel)
-	wg.Done()
-
-}
 
 type Destination struct {
 
@@ -142,7 +116,7 @@ func main(){
 		os.Exit(EXIT_ERROR)
 	}
 
-	coreConf := new(CoreConfiguration)
+	coreConf := new(core.CoreConfiguration)
 	coreConf.ASNumber = ASNumber
 	coreConf.RouterID = RouterID
 
@@ -153,10 +127,4 @@ func main(){
 
 }
 
-func CoreStart(coreConf *CoreConfiguration, wg *sync.WaitGroup){
-
-	wg.Add(1)
-	
-
-}
 
