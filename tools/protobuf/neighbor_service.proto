@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package proto;
+
+service NeighborService {
+  rpc ListNeighbor(RequestType) returns (stream Neighbor) {};
+}
+
+message ResponseType {
+}
+
+message RequestType {
+}
+
+message Neighbor {
+  string address = 1;
+  string state = 2;
+}
+

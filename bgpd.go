@@ -148,6 +148,10 @@ func main() {
 	restServer := api.NewRestServer(api.REST_PORT, bgpServer.RestReqCh)
 	go restServer.Serve()
 
+	// start Rpc Server
+	rpcServer := api.NewRpcServer(api.RPC_PORT, bgpServer.RpcReqCh)
+	go rpcServer.Serve()
+
 	var bgpConfig *config.Bgp = nil
 	for {
 		select {

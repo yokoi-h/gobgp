@@ -21,6 +21,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/osrg/gobgp/api"
 	"github.com/osrg/gobgp/config"
+	pb "github.com/osrg/gobgp/proto"
 	"net"
 	"os"
 	"strconv"
@@ -60,6 +61,7 @@ type BgpServer struct {
 	addedPeerCh   chan config.Neighbor
 	deletedPeerCh chan config.Neighbor
 	RestReqCh     chan *api.RestRequest
+	RpcReqCh      chan *api.RpcRequest
 	listenPort    int
 	peerMap       map[string]peerMapInfo
 	globalRib     *Peer
@@ -71,6 +73,7 @@ func NewBgpServer(port int) *BgpServer {
 	b.addedPeerCh = make(chan config.Neighbor)
 	b.deletedPeerCh = make(chan config.Neighbor)
 	b.RestReqCh = make(chan *api.RestRequest, 1)
+	b.RpcReqCh = make(chan *api.RpcRequest, 1)
 	b.listenPort = port
 	return &b
 }
@@ -219,6 +222,8 @@ func (server *BgpServer) Serve() {
 			}
 		case restReq := <-server.RestReqCh:
 			server.handleRest(restReq)
+		case rpcReq := <-server.RpcReqCh:
+			server.handleRpc(rpcReq)
 		}
 	}
 }
@@ -295,4 +300,23 @@ func (server *BgpServer) handleRest(restReq *api.RestRequest) {
 			close(restReq.ResponseCh)
 		}
 	}
+}
+
+func (server *BgpServer) handleRpc(rpcReq *api.RpcRequest) {
+	switch rpcReq.RequestType {
+	case api.REQ_NEIGHBORS:
+		neighbors := make([]interface{}, 0)
+		result := &api.RpcResponse{}
+		for _, info := range server.peerMap {
+			n := &pb.Neighbor{
+				Address: info.peer.peerConfig.NeighborAddress.String(),
+				State:   info.peer.fsm.state.String(),
+			}
+			neighbors = append(neighbors, n)
+		}
+		result.Data = neighbors
+		rpcReq.ResponseCh <- result
+
+	}
+	close(rpcReq.ResponseCh)
 }
