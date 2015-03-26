@@ -12,5 +12,8 @@ This command can be used to generate code which register URL and handler.
  rest-generator ./api/rest-generator-sample.go ./api/rest-router.go
 ```
 
+rest-generator generates rest-router.go automatically.
+You can find it under the api directory.
+
 ## for go 1.4
  We can use go generate subcommand but I'm investigating how to use it.
