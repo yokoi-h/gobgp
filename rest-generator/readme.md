@@ -16,4 +16,9 @@ rest-generator generates rest-router.go automatically.
 You can find it under the api directory.
 
 ## for go 1.4
- We can use go generate subcommand but I'm investigating how to use it.
+```shell
+ cd $GOPATH/src/github.com/osrg/gobgp
+ go get github.com/osrg/gobgp/rest-generator
+ cd $GOPATH/src/github.com/osrg/gobgp/api
+ go generate
+```
