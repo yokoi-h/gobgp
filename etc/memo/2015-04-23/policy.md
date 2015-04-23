@@ -2,6 +2,7 @@
 
 ## bgp-policy.yang
 
+#### augment
 - bgp向けのpolicyとして使えるmatchやactionはbgp-policy.yangで定義されており、augment命令(?)によって、その配下のnodeがrouting-policy.yang側の指定されたnodeに組み込まれる
 
 ```
