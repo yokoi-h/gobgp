@@ -1,4 +1,4 @@
-## yangのListのメンバ名について
+## yangのlistに対する構造体のメンバ名について
 
 
 現状、yangのnodeでlistとして定義されているものは、bgp-config.goの構造体のメンバ名としてListというsuffixをつけており、
