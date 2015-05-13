@@ -342,7 +342,7 @@ Address = "10.0.255.1"
 
 ----
 
-## 必要なaction条件
+## 必要なaction
 
 ### set med [N|+N|-N|igp]
 
