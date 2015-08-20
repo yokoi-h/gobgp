@@ -5,9 +5,9 @@ import sys
 _TIMEOUT_SECONDS = 10
 
 
-def run(gobgpd):
+def run(gobgpd, neighbor):
     with gobgp_pb2.early_adopter_create_Grpc_stub(gobgpd, 8080) as stub:
-        peer = stub.GetNeighbor(gobgp_pb2.Arguments(rf=4, name="10.0.0.100"), _TIMEOUT_SECONDS)
+        peer = stub.GetNeighbor(gobgp_pb2.Arguments(rf=4, name=neighbor), _TIMEOUT_SECONDS)
         print("*** call GetNeighbor ***")
         print("BGP neighbor is %s, remote AS %d" % (peer.conf.remote_ip, peer.conf.remote_as))
         print("  BGP version 4, remote router ID %s" % ( peer.conf.id))
@@ -36,4 +36,5 @@ def run(gobgpd):
 
 if __name__ == '__main__':
     gobgpd = sys.argv[1]
-    run(gobgpd)
+    neighbor = sys.argv[2]
+    run(gobgpd, neighbor)
