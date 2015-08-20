@@ -25,13 +25,13 @@ def run(gobgpd, resource, args):
 
         dt = datetime.now()
         ts = dt.strftime("%Y%m%d_%H%M%S")
-        
+
         if resource == "global":
             interval = 0
             if len(args) > 0:
                 interval = int(args[0])
 
-            filename = "rib_ipv4_" + ts
+            af = "ipv4"
             a = gobgp_pb2.MrtArguments(resource=0, interval=interval)
 
         elif resource == "neighbor":
@@ -41,17 +41,20 @@ def run(gobgpd, resource, args):
             if len(args) > 1:
                 interval = int(args[1])
 
-            filename = "rib_%s_%s" % (af, ts)
             a = gobgp_pb2.MrtArguments(resource=1, rf=rf,
                                        neighbor_address=neighbor_address,
                                        interval=interval)
         else:
             print("unknown resource type: %s" % resource)
 
-        print(filename)
+
 
         dumps = stub.GetMrt(a, _TIMEOUT_SECONDS)
         for dump in dumps:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = "rib_%s_%s" % (af, ts)
+            print(filename)
+
             print(dump.data)
 
 
