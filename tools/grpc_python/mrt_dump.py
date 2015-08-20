@@ -48,14 +48,20 @@ def run(gobgpd, resource, args):
             print("unknown resource type: %s" % resource)
 
 
+        try:
+            dumps = stub.GetMrt(a, _TIMEOUT_SECONDS)
+            for dump in dumps:
+                ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = "rib_%s_%s" % (af, ts)
+                print(filename)
 
-        dumps = stub.GetMrt(a, _TIMEOUT_SECONDS)
-        for dump in dumps:
-            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filename = "rib_%s_%s" % (af, ts)
-            print(filename)
+                print(dump.data)
 
-            print(dump.data)
+        except Exception as err:
+            print 'exception:', err
+        except KeyboardInterrupt:
+            print 'KeyboardInterrupt'
+
 
 
 if __name__ == '__main__':
