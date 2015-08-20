@@ -9,7 +9,7 @@ def run(gobgpd):
 
     with gobgp_pb2.early_adopter_create_Grpc_stub(gobgpd, 8080) as stub:
         resource = sys.argv[2]
-
+        neighbor = ""
         if resource == "global":
             res = 0
         elif resource == "neighbor":
