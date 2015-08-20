@@ -1,6 +1,7 @@
 import gobgp_pb2
 import sys
 import netaddr
+import datetime
 
 _TIMEOUT_SECONDS = 10
 AFI_IP = 1
@@ -11,32 +12,42 @@ SAFI_UNICAST = 1
 def check_address_family(neighbor):
     ip = netaddr.IPAddress(neighbor)
     if ip.version == 6:
-        return AFI_IP6 << 16 | SAFI_UNICAST
+        rf = AFI_IP6 << 16 | SAFI_UNICAST
+        af = "ipv6"
     else:
-        return AFI_IP << 16 | SAFI_UNICAST
+        rf = AFI_IP << 16 | SAFI_UNICAST
+        af = "ipv4"
+
+    return rf, af
 
 def run(gobgpd, resource, args):
     with gobgp_pb2.early_adopter_create_Grpc_stub(gobgpd, 8080) as stub:
 
+        dt = datetime.now()
         if resource == "global":
             interval = 0
             if len(args) > 0:
                 interval = int(args[0])
 
+            af = "ipv4"
+            filename = "ipv4" + dt.strftime("%Y%m%d_%H%M%S")
             a = gobgp_pb2.MrtArguments(resource=0, interval=interval)
 
         elif resource == "neighbor":
             neighbor_address = args[0]
             interval = 0
-            rf = check_address_family(neighbor_address)
+            rf, af = check_address_family(neighbor_address)
             if len(args) > 1:
                 interval = int(args[1])
 
+            filename = af + "_" + dt.strftime("%Y%m%d_%H%M%S")
             a = gobgp_pb2.MrtArguments(resource=1, rf=rf,
                                        neighbor_address=neighbor_address,
                                        interval=interval)
         else:
             print("unknown resource type: %s" % resource)
+
+        print(filename)
 
         dumps = stub.GetMrt(a, _TIMEOUT_SECONDS)
         for dump in dumps:
