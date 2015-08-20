@@ -3,7 +3,7 @@ import sys
 import netaddr
 from datetime import datetime
 
-_TIMEOUT_SECONDS = 10
+_TIMEOUT_SECONDS = 100000
 AFI_IP = 1
 AFI_IP6 = 2
 SAFI_UNICAST = 1
@@ -59,9 +59,10 @@ def run(gobgpd, resource, args):
 
         except Exception as err:
             print 'exception:', err
+            sys.exit(1)
         except KeyboardInterrupt:
             print 'KeyboardInterrupt'
-
+            sys.exit(0)
 
 
 if __name__ == '__main__':
