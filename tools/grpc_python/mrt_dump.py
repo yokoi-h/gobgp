@@ -1,7 +1,7 @@
 import gobgp_pb2
 import sys
 import netaddr
-import datetime
+from datetime import datetime
 
 _TIMEOUT_SECONDS = 10
 AFI_IP = 1
@@ -24,13 +24,14 @@ def run(gobgpd, resource, args):
     with gobgp_pb2.early_adopter_create_Grpc_stub(gobgpd, 8080) as stub:
 
         dt = datetime.now()
+        ts = dt.strftime("%Y%m%d_%H%M%S")
+        
         if resource == "global":
             interval = 0
             if len(args) > 0:
                 interval = int(args[0])
 
-            af = "ipv4"
-            filename = "ipv4" + dt.strftime("%Y%m%d_%H%M%S")
+            filename = "rib_ipv4_" + ts
             a = gobgp_pb2.MrtArguments(resource=0, interval=interval)
 
         elif resource == "neighbor":
@@ -40,7 +41,7 @@ def run(gobgpd, resource, args):
             if len(args) > 1:
                 interval = int(args[1])
 
-            filename = af + "_" + dt.strftime("%Y%m%d_%H%M%S")
+            filename = "rib_%s_%s" % (af, ts)
             a = gobgp_pb2.MrtArguments(resource=1, rf=rf,
                                        neighbor_address=neighbor_address,
                                        interval=interval)
