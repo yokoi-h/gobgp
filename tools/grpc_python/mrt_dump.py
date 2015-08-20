@@ -23,9 +23,6 @@ def check_address_family(neighbor):
 def run(gobgpd, resource, args):
     with gobgp_pb2.early_adopter_create_Grpc_stub(gobgpd, 8080) as stub:
 
-        dt = datetime.now()
-        ts = dt.strftime("%Y%m%d_%H%M%S")
-
         if resource == "global":
             interval = 0
             if len(args) > 0:
@@ -49,12 +46,13 @@ def run(gobgpd, resource, args):
 
 
         try:
+            print("get")
             dumps = stub.GetMrt(a, _TIMEOUT_SECONDS)
+            print("done")
             for dump in dumps:
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = "rib_%s_%s" % (af, ts)
                 print(filename)
-
                 print(dump.data)
 
         except Exception as err:
