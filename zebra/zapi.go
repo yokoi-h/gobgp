@@ -817,11 +817,12 @@ func (b *ImportLookupBody) DecodeFromBytes(data []byte) error {
 	b.Addr = net.IP(buf).To4()
 
 	if len(data[pos:]) > int(1+addrLen) {
+		log.Info("here1")
 		b.Metric = binary.BigEndian.Uint32(data[pos : pos+4])
 		pos += 4
 		nexthopNum := int(data[pos])
 		b.Nexthops = []*Nexthop{}
-
+		log.Info("here2")
 		if nexthopNum > 0 {
 			pos += 1
 			for i := 0; i < nexthopNum; i++ {
