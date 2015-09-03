@@ -851,6 +851,8 @@ func (b *ImportLookupBody) DecodeFromBytes(data []byte) error {
 					pos += 4
 				}
 				b.Nexthops = append(b.Nexthops, nh)
+				log.Infof("nexthops %v",b.Nexthops)
+				log.Infof("nexthops len %d",len(b.Nexthops))
 			}
 		}
 	}
