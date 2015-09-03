@@ -863,8 +863,8 @@ func (b *ImportLookupBody) DecodeFromBytes(data []byte) error {
 func (b *ImportLookupBody) String() string {
 	s := fmt.Sprintf("addr: %s, metric: %d", b.Addr, b.Metric)
 	if len(b.Nexthops) > 0 {
-		for nh := range b.Nexthops {
-			s = s + fmt.Sprintf(", nexthop: %v", nh)
+		for _, nh := range b.Nexthops {
+			s = s + fmt.Sprintf(", nexthop:{%s}", nh.String())
 		}
 	}
 	return s
