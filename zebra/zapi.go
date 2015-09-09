@@ -23,6 +23,7 @@ import (
 	"net"
 	"strings"
 	"syscall"
+	"time"
 )
 
 const (
@@ -183,22 +184,27 @@ const (
 	NEXTHOP_BLACKHOLE
 )
 
+const CONNECT_MAX_RETRY int = 10
+
 type Client struct {
 	outgoing      chan *Message
 	incoming      chan *Message
+	errch         chan error
 	redistDefault ROUTE_TYPE
+	network       string
+	address       string
 	conn          net.Conn
 }
 
-func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
-	conn, err := net.Dial(network, address)
+func (c *Client) Start() error {
+	conn, err := net.Dial(c.network, c.address)
 	if err != nil {
 		return nil, err
 	}
-	outgoing := make(chan *Message)
+
 	go func() {
 		for {
-			m, more := <-outgoing
+			m, more := <-c.outgoing
 			if more {
 				b, err := m.Serialize()
 				if err != nil {
@@ -208,7 +214,9 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 
 				_, err = conn.Write(b)
 				if err != nil {
-					log.Errorf("failed to write: ", err)
+					log.Errorf("failed to write: %s", err)
+					c.errch <- err
+					c.outgoing = nil
 					return
 				}
 			} else {
@@ -218,26 +226,28 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 		}
 	}()
 
-	incoming := make(chan *Message, 64)
-	go func() error {
+	go func() {
 		for {
 			headerBuf, err := readAll(conn, HEADER_SIZE)
 			if err != nil {
 				log.Error("failed to read header: ", err)
-				return err
+				c.errch <- err
+				return
 			}
 			log.Debugf("read header from zebra: %v", headerBuf)
 			hd := &Header{}
 			err = hd.DecodeFromBytes(headerBuf)
 			if err != nil {
 				log.Error("failed to decode header: ", err)
-				return err
+				c.errch <- err
+				return
 			}
 
 			bodyBuf, err := readAll(conn, int(hd.Len-HEADER_SIZE))
 			if err != nil {
 				log.Error("failed to read body: ", err)
-				return err
+				c.errch <- err
+				return
 			}
 			log.Debugf("read body from zebra: %v", bodyBuf)
 			m, err := ParseMessage(hd, bodyBuf)
@@ -246,15 +256,28 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 				continue
 			}
 
-			incoming <- m
+			c.incoming <- m
 		}
+
 	}()
-	return &Client{
+}
+
+func NewClient(network, address string, typ ROUTE_TYPE) *Client {
+	errch := make(chan error)
+	incoming := make(chan *Message, 64)
+	outgoing := make(chan *Message, 64)
+	c := &Client{
 		outgoing:      outgoing,
 		incoming:      incoming,
+		errch:         errch,
 		redistDefault: typ,
-		conn:          conn,
-	}, nil
+		network:       network,
+		address:       address,
+	}
+	if err := c.Start(); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 
 func readAll(conn net.Conn, length int) ([]byte, error) {
@@ -263,12 +286,53 @@ func readAll(conn net.Conn, length int) ([]byte, error) {
 	return buf, err
 }
 
-func (c *Client) Recieve() chan *Message {
+func (c *Client) Receive() chan *Message {
 	return c.incoming
 }
 
 func (c *Client) Send(m *Message) {
-	c.outgoing <- m
+
+	select {
+	case c.outgoing <- m:
+	default:
+		log.WithFields(log.Fields{
+			"Topic":   "Zebra",
+			"Message": m,
+		}).Warn("message dropped")
+	}
+}
+
+func (c *Client) Err() chan error {
+	return c.errch
+}
+
+func (c *Client) Reconnect() {
+
+	failed := 0
+	for {
+		if failed < CONNECT_MAX_RETRY {
+			w := 3
+			if failed > 2 {
+				w = 10
+			}
+			time.Sleep(time.Second * w)
+			if err := c.Start(); err != nil {
+				log.Errorf("zclient connect error: %s", err)
+				failed += 1
+			} else {
+				log.Info("zebra reconnected")
+				break
+			}
+		} else {
+			log.Errorf("exceeded CONNECT_MAX_RETRY:%d", CONNECT_MAX_RETRY)
+			return
+		}
+	}
+	c.SendHello()
+	c.SendRouterIDAdd()
+	c.SendInterfaceAdd()
+	c.SendRedistribute()
+	return
 }
 
 func (c *Client) SendCommand(command API_TYPE, body Body) error {
@@ -343,7 +407,7 @@ func (c *Client) SendRedistributeDelete(t ROUTE_TYPE) error {
 }
 
 func (c *Client) Close() error {
-	close(c.outgoing)
+	c.outgoing = nil
 	return c.conn.Close()
 }
 

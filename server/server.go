@@ -232,8 +232,10 @@ func (server *BgpServer) Serve() {
 	var senderMsgs []*SenderMsg
 
 	var zapiMsgCh chan *zebra.Message
+	var zapiErrCh chan error
 	if server.zclient != nil {
-		zapiMsgCh = server.zclient.Recieve()
+		zapiMsgCh = server.zclient.Receive()
+		zapiErrCh = server.zclient.Err()
 	}
 	for {
 		var firstMsg *SenderMsg
@@ -259,6 +261,14 @@ func (server *BgpServer) Serve() {
 			if len(m) > 0 {
 				senderMsgs = append(senderMsgs, m...)
 			}
+		case zapiErr := <-zapiErrCh:
+			log.WithFields(log.Fields{
+				"Topic": "Server",
+				"Error": zapiErr,
+			}).Error("error occured in zclient. reconnecting...")
+
+			go server.zclient.Reconnect()
+
 		case conn := <-acceptCh:
 			remoteAddr, _, _ := net.SplitHostPort(conn.RemoteAddr().String())
 			peer, found := server.neighborMap[remoteAddr]
