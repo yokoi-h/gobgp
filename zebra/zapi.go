@@ -199,7 +199,7 @@ type Client struct {
 func (c *Client) Start() error {
 	conn, err := net.Dial(c.network, c.address)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	go func() {
@@ -260,9 +260,11 @@ func (c *Client) Start() error {
 		}
 
 	}()
+	return nil
+
 }
 
-func NewClient(network, address string, typ ROUTE_TYPE) *Client {
+func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 	errch := make(chan error)
 	incoming := make(chan *Message, 64)
 	outgoing := make(chan *Message, 64)
@@ -315,7 +317,7 @@ func (c *Client) Reconnect() {
 			if failed > 2 {
 				w = 10
 			}
-			time.Sleep(time.Second * w)
+			time.Sleep(time.Second * time.Duration(w))
 			if err := c.Start(); err != nil {
 				log.Errorf("zclient connect error: %s", err)
 				failed += 1
