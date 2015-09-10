@@ -19,6 +19,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	log "github.com/Sirupsen/logrus"
+	"gopkg.in/tomb.v2"
 	"io"
 	"net"
 	"strings"
@@ -194,6 +195,31 @@ type Client struct {
 	network       string
 	address       string
 	conn          net.Conn
+	t             tomb.Tomb
+}
+
+func (c *Client) send() {
+	for {
+		select {
+		case m := <-c.outgoing:
+			b, err := m.Serialize()
+			if err != nil {
+				log.Warnf("failed to serialize: %s", m)
+				continue
+			}
+
+			_, err = c.conn.Write(b)
+			if err != nil {
+				log.Errorf("failed to write: %s", err)
+				c.errch <- err
+				return
+			}
+
+		case c.t.Dying():
+			log.Debug("finish outgoing loop")
+			return
+		}
+	}
 }
 
 func (c *Client) Start() error {
@@ -201,30 +227,9 @@ func (c *Client) Start() error {
 	if err != nil {
 		return err
 	}
-
-	go func() {
-		for {
-			m, more := <-c.outgoing
-			if more {
-				b, err := m.Serialize()
-				if err != nil {
-					log.Warnf("failed to serialize: %s", m)
-					continue
-				}
-
-				_, err = conn.Write(b)
-				if err != nil {
-					log.Errorf("failed to write: %s", err)
-					c.errch <- err
-					c.outgoing = nil
-					return
-				}
-			} else {
-				log.Debug("finish outgoing loop")
-				return
-			}
-		}
-	}()
+	c.conn = conn
+	c.outgoing = make(chan *Message, 64)
+	c.t.Go(c.send())
 
 	go func() {
 		for {
@@ -322,7 +327,7 @@ func (c *Client) Reconnect() {
 				log.Errorf("zclient connect error: %s", err)
 				failed += 1
 			} else {
-				log.Info("zebra reconnected")
+				log.Info("zclient reconnected")
 				break
 			}
 		} else {
@@ -409,6 +414,7 @@ func (c *Client) SendRedistributeDelete(t ROUTE_TYPE) error {
 }
 
 func (c *Client) Close() error {
+	c.t.Kill(nil)
 	c.outgoing = nil
 	return c.conn.Close()
 }

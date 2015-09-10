@@ -265,7 +265,7 @@ func (server *BgpServer) Serve() {
 			log.WithFields(log.Fields{
 				"Topic": "Server",
 				"Error": zapiErr,
-			}).Error("error occured in zclient. reconnecting...")
+			}).Error("error occurred in zclient. reconnecting...")
 
 			go server.zclient.Reconnect()
 
