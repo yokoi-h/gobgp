@@ -48,3 +48,4 @@ if [ "${BUILD_TAG}" != "" ]; then
     s3cmd put jenkins-log-${BUILD_NUMBER}.tar.gz s3://gobgp/jenkins/
     rm -rf jenkins-log-${BUILD_NUMBER} jenkins-log-${BUILD_NUMBER}.tar.gz
 fi
+
