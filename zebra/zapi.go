@@ -347,9 +347,11 @@ func (c *Client) writeMessage(ch chan net.Conn) {
 			c.Err <- fmt.Errorf("zclient stopped")
 			return
 		case err := <-ech:
+			log.Debug("write routine catch err from read")
 			conn.Close()
 			conn = nil
 			c.Err <- fmt.Errorf("read routine error: %s", err)
+			log.Debug("write routine emit error to c.Err")
 
 		}
 	}
