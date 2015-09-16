@@ -210,12 +210,10 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 		return nil, err
 	}
 
-	outgoing := make(chan *Message)
-	incoming := make(chan *Message, 64)
-
 	c := &Client{
-		outgoing:      outgoing,
-		incoming:      incoming,
+		outgoing:      make(chan *Message),
+		incoming:      make(chan *Message, 64),
+		Err:           make(chan error),
 		redistDefault: typ,
 		isRunning:     true,
 	}
@@ -228,30 +226,37 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 		go c.writeMessage(connCh)
 		connCh <- conn
 
+		reconnect := func() {
+			c.failed += 1
+			delay := 3
+			if c.failed > 2 {
+				delay = 10
+			}
+			retrych = time.After(time.Duration(delay) * time.Second)
+		}
+
 		for {
 			select {
 			case <-c.Err:
-
 				if !c.isRunning {
 					return
 				}
-
-				log.Debug("write routine Error")
-				c.failed += 1
-				delay := 3
-				if c.failed > 2 {
-					delay = 10
-				}
-				retrych = time.After(time.Duration(delay) * time.Second)
+				reconnect()
 
 			case <-retrych:
 				log.Debug("retry connect")
 				if conn, err := connect(); err != nil {
 					log.Errorf("failed to connect: ", err)
-					c.Err <- err
+					reconnect()
 				} else {
 					c.failed = 0
-					connCh <- conn
+
+					select {
+					case connCh <- conn:
+					default:
+						log.Debug("already connected")
+
+					}
 				}
 			}
 		}
@@ -316,6 +321,14 @@ func (c *Client) writeMessage(ch chan net.Conn) {
 	ech := make(chan error)
 	go c.readMessage(conn, ech)
 
+	emit := func(err error) {
+		select {
+		case c.Err <- err:
+		default:
+			log.Warnf("error has already been emitted: %s", err)
+		}
+	}
+
 	for {
 		select {
 		case m := <-c.outgoing:
@@ -329,7 +342,7 @@ func (c *Client) writeMessage(ch chan net.Conn) {
 				_, err = conn.Write(b)
 				if err != nil {
 					log.Errorf("failed to write: %s", err)
-					c.Err <- err
+					emit(err)
 					conn.Close()
 					conn = nil
 				}
@@ -344,13 +357,13 @@ func (c *Client) writeMessage(ch chan net.Conn) {
 		case <-c.stop:
 			conn.Close()
 			c.isRunning = false
-			c.Err <- fmt.Errorf("zclient stopped")
+			emit(fmt.Errorf("zclient stopped"))
 			return
 		case err := <-ech:
 			log.Debug("write routine catch err from read")
 			conn.Close()
 			conn = nil
-			c.Err <- fmt.Errorf("read routine error: %s", err)
+			emit(fmt.Errorf("read routine error: %s", err))
 			log.Debug("write routine emit error to c.Err")
 
 		}
