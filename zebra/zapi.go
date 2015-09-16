@@ -23,6 +23,7 @@ import (
 	"net"
 	"strings"
 	"syscall"
+	"time"
 )
 
 const (
@@ -187,74 +188,78 @@ type Client struct {
 	outgoing      chan *Message
 	incoming      chan *Message
 	redistDefault ROUTE_TYPE
-	conn          net.Conn
+	Err           chan error
+	failed        int
+	stop          chan struct{}
+	isRunning     bool
 }
 
 func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
-	conn, err := net.Dial(network, address)
+
+	connect := func() (net.Conn, error) {
+		log.Debugf("connect: %s %s", network, address)
+		conn, err := net.Dial(network, address)
+		if err != nil {
+			return nil, err
+		}
+		return conn, nil
+	}
+
+	conn, err := connect()
 	if err != nil {
 		return nil, err
 	}
+
 	outgoing := make(chan *Message)
-	go func() {
-		for {
-			m, more := <-outgoing
-			if more {
-				b, err := m.Serialize()
-				if err != nil {
-					log.Warnf("failed to serialize: %s", m)
-					continue
-				}
-
-				_, err = conn.Write(b)
-				if err != nil {
-					log.Errorf("failed to write: ", err)
-					return
-				}
-			} else {
-				log.Debug("finish outgoing loop")
-				return
-			}
-		}
-	}()
-
 	incoming := make(chan *Message, 64)
-	go func() error {
-		for {
-			headerBuf, err := readAll(conn, HEADER_SIZE)
-			if err != nil {
-				log.Error("failed to read header: ", err)
-				return err
-			}
-			log.Debugf("read header from zebra: %v", headerBuf)
-			hd := &Header{}
-			err = hd.DecodeFromBytes(headerBuf)
-			if err != nil {
-				log.Error("failed to decode header: ", err)
-				return err
-			}
 
-			bodyBuf, err := readAll(conn, int(hd.Len-HEADER_SIZE))
-			if err != nil {
-				log.Error("failed to read body: ", err)
-				return err
-			}
-			log.Debugf("read body from zebra: %v", bodyBuf)
-			m, err := ParseMessage(hd, bodyBuf)
-			if err != nil {
-				log.Warn("failed to parse message: ", err)
-				continue
-			}
-
-			incoming <- m
-		}
-	}()
-	return &Client{
+	c := &Client{
 		outgoing:      outgoing,
 		incoming:      incoming,
 		redistDefault: typ,
-		conn:          conn,
-	}, nil
+		isRunning:     true,
+	}
+
+	go func() {
+
+		var retrych <-chan time.Time = nil
+		connCh := make(chan net.Conn)
+		connCh <- conn
+		go c.writeMessage(connCh)
+
+		for {
+			select {
+			case <-c.Err:
+
+				if !c.isRunning {
+					return
+				}
+
+				log.Debug("write routine Error")
+				c.failed += 1
+				delay := 3
+				if c.failed > 2 {
+					delay = 10
+				}
+				retrych = time.After(time.Duration(delay) * time.Second)
+
+			case <-retrych:
+				log.Debug("retry connect")
+				if conn, err := connect(); err != nil {
+					log.Errorf("failed to connect: ", err)
+					c.Err <- err
+				} else {
+					c.failed = 0
+					connCh <- conn
+				}
+			}
+		}
+
+		log.Debug("zapi message loop finished")
+		return
+	}()
+
+	return c, nil
 }
 
 func readAll(conn net.Conn, length int) ([]byte, error) {
@@ -263,7 +268,90 @@ func readAll(conn net.Conn, length int) ([]byte, error) {
 	return buf, err
 }
 
-func (c *Client) Recieve() chan *Message {
+func (c *Client) readMessage(conn net.Conn, ech chan error) {
+
+	for {
+
+		headerBuf, err := readAll(conn, HEADER_SIZE)
+		if err != nil {
+			log.Error("failed to read header: ", err)
+			ech <- err
+			break
+		}
+		log.Debugf("read header from zebra: %v", headerBuf)
+		hd := &Header{}
+		err = hd.DecodeFromBytes(headerBuf)
+		if err != nil {
+			log.Error("failed to decode header: ", err)
+			ech <- err
+			break
+		}
+
+		bodyBuf, err := readAll(conn, int(hd.Len-HEADER_SIZE))
+		if err != nil {
+			log.Error("failed to read body: ", err)
+			ech <- err
+			break
+		}
+		log.Debugf("read body from zebra: %v", bodyBuf)
+		m, err := ParseMessage(hd, bodyBuf)
+		if err != nil {
+			log.Warn("failed to parse message: ", err)
+			continue
+		}
+		c.incoming <- m
+	}
+
+	return
+}
+
+func (c *Client) writeMessage(ch chan net.Conn) {
+
+	conn := <-ch
+	ech := make(chan error)
+	go c.readMessage(conn, ech)
+
+	for {
+		select {
+		case m := <-c.outgoing:
+			if conn != nil {
+				b, err := m.Serialize()
+				if err != nil {
+					log.Warnf("failed to serialize: %s", m)
+					continue
+				}
+
+				_, err = conn.Write(b)
+				if err != nil {
+					log.Errorf("failed to write: %s", err)
+					c.Err <- err
+					conn.Close()
+					conn = nil
+				}
+			} else {
+				log.Debug("message was dropped")
+			}
+		case conn = <-ch:
+			log.Debug("connection recovered")
+			ech = make(chan error)
+			go c.readMessage(conn, ech)
+
+		case <-c.stop:
+			conn.Close()
+			c.isRunning = false
+			c.Err <- fmt.Errorf("zclient stopped")
+			return
+		case err := <-ech:
+			conn.Close()
+			conn = nil
+			c.Err <- fmt.Errorf("read routine error: %s", err)
+
+		}
+	}
+
+}
+
+func (c *Client) Receive() chan *Message {
 	return c.incoming
 }
 
@@ -342,9 +430,8 @@ func (c *Client) SendRedistributeDelete(t ROUTE_TYPE) error {
 	return nil
 }
 
-func (c *Client) Close() error {
-	close(c.outgoing)
-	return c.conn.Close()
+func (c *Client) Close() {
+	c.stop <- struct{}{}
 }
 
 type Header struct {

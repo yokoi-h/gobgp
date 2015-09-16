@@ -238,7 +238,7 @@ func (server *BgpServer) Serve() {
 
 	var zapiMsgCh chan *zebra.Message
 	if server.zclient != nil {
-		zapiMsgCh = server.zclient.Recieve()
+		zapiMsgCh = server.zclient.Receive()
 	}
 	for {
 		var firstMsg *SenderMsg
