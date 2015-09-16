@@ -224,9 +224,9 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 		log.Debug("start zclient main loop")
 		var retrych <-chan time.Time = nil
 		connCh := make(chan net.Conn)
-		connCh <- conn
 		log.Debug("invoke zclient write loop")
 		go c.writeMessage(connCh)
+		connCh <- conn
 
 		for {
 			select {
