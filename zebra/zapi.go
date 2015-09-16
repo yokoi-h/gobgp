@@ -278,6 +278,7 @@ func (c *Client) readMessage(conn net.Conn, ech chan error) {
 		if err != nil {
 			log.Error("failed to read header: ", err)
 			ech <- err
+			log.Debug("read routine break")
 			break
 		}
 		log.Debugf("read header from zebra: %v", headerBuf)
@@ -301,9 +302,10 @@ func (c *Client) readMessage(conn net.Conn, ech chan error) {
 			log.Warn("failed to parse message: ", err)
 			continue
 		}
+		log.Debug("read routine incomming")
 		c.incoming <- m
 	}
-
+	log.Debug("read routine return")
 	return
 }
 
