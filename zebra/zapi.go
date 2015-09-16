@@ -221,10 +221,11 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 	}
 
 	go func() {
-
+		log.Debug("start zclient main loop")
 		var retrych <-chan time.Time = nil
 		connCh := make(chan net.Conn)
 		connCh <- conn
+		log.Debug("invoke zclient write loop")
 		go c.writeMessage(connCh)
 
 		for {
@@ -270,6 +271,7 @@ func readAll(conn net.Conn, length int) ([]byte, error) {
 
 func (c *Client) readMessage(conn net.Conn, ech chan error) {
 
+	log.Debug("start zclient read loop")
 	for {
 
 		headerBuf, err := readAll(conn, HEADER_SIZE)
@@ -307,6 +309,7 @@ func (c *Client) readMessage(conn net.Conn, ech chan error) {
 
 func (c *Client) writeMessage(ch chan net.Conn) {
 
+	log.Debug("start zclient write loop")
 	conn := <-ch
 	ech := make(chan error)
 	go c.readMessage(conn, ech)
