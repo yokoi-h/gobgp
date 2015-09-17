@@ -39,8 +39,6 @@ class GoBGPContainer(BGPContainer):
 
     def _start_gobgp(self):
         zebra_op = ''
-        if self.zebra:
-            zebra_op = '-z'
         c = CmdBuffer()
         c << '#!/bin/bash'
         c << '/go/bin/gobgpd -f {0}/gobgpd.conf -l {1} -p {2} > ' \
