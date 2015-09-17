@@ -276,6 +276,9 @@ class GoBGPContainer(BGPContainer):
         if len(policy_list) > 0:
             config['PolicyDefinitions'] = {'PolicyDefinitionList': policy_list}
 
+        if self.zebra:
+            config['Global']['Zebra'] = {'Enabled': True}
+
         with open('{0}/gobgpd.conf'.format(self.config_dir), 'w') as f:
             print colors.yellow('[{0}\'s new config]'.format(self.name))
             print colors.yellow(indent(toml.dumps(config)))
