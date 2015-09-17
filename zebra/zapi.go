@@ -349,7 +349,12 @@ func (c *Client) writeMessage(ch chan net.Conn) {
 			} else {
 				log.Debug("message was dropped")
 			}
-		case conn = <-ch:
+		case cc := <-ch:
+			if conn != nil {
+				cc.Close()
+			} else {
+				conn = cc
+			}
 			log.Debug("connection recovered")
 			ech = make(chan error)
 			go c.readMessage(conn, ech)
