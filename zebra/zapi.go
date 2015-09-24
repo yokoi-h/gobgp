@@ -220,6 +220,7 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 				if err != nil {
 					log.Errorf("failed to write: ", err)
 					c.err = err
+					close(outgoing)
 				}
 			} else {
 				log.Debug("finish outgoing loop")
@@ -274,6 +275,11 @@ func (c *Client) Receive() chan *Message {
 
 func (c *Client) Send(m *Message) {
 	if c.err == nil {
+		defer func() {
+			if err := recover(); err != nil {
+				log.Errorf("outgoing channel has been closed: %s", err)
+			}
+		}()
 		c.outgoing <- m
 	}
 }
