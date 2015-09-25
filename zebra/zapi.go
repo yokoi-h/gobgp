@@ -217,7 +217,7 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 
 				_, err = conn.Write(b)
 				if err != nil {
-					log.Errorf("failed to write: ", err)
+					log.Errorf("failed to write: %s", err)
 					close(outgoing)
 				}
 			} else {
@@ -274,7 +274,7 @@ func (c *Client) Receive() chan *Message {
 func (c *Client) Send(m *Message) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Debugf("outgoing channel is closed: %s", err)
+			log.Debugf("recovered: %s", err)
 		}
 	}()
 	c.outgoing <- m
