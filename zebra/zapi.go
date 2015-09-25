@@ -188,7 +188,6 @@ type Client struct {
 	incoming      chan *Message
 	redistDefault ROUTE_TYPE
 	conn          net.Conn
-	err           error
 }
 
 func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
@@ -219,7 +218,6 @@ func NewClient(network, address string, typ ROUTE_TYPE) (*Client, error) {
 				_, err = conn.Write(b)
 				if err != nil {
 					log.Errorf("failed to write: ", err)
-					c.err = err
 					close(outgoing)
 				}
 			} else {
@@ -274,14 +272,12 @@ func (c *Client) Receive() chan *Message {
 }
 
 func (c *Client) Send(m *Message) {
-	if c.err == nil {
-		defer func() {
-			if err := recover(); err != nil {
-				log.Errorf("outgoing channel has been closed: %s", err)
-			}
-		}()
-		c.outgoing <- m
-	}
+	defer func() {
+		if err := recover(); err != nil {
+			log.Debugf("outgoing channel is closed: %s", err)
+		}
+	}()
+	c.outgoing <- m
 }
 
 func (c *Client) SendCommand(command API_TYPE, body Body) error {
