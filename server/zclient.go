@@ -124,8 +124,9 @@ func createPathFromIPRouteMessage(m *zebra.Message, peerInfo *table.PeerInfo) *t
 		pattr = append(pattr, mpnlri)
 	}
 
-	med := bgp.NewPathAttributeMultiExitDisc(body.Metric)
-	pattr = append(pattr, med)
+	metric := bgp.NewAigpTLVIgpMetric(body.Metric)
+	aigp := bgp.NewPathAttributeAigp([]bgp.AigpTLV{metric})
+	pattr = append(pattr, aigp)
 
 	p := table.NewPath(peerInfo, nlri, isWithdraw, pattr, false, time.Now(), false)
 	p.IsFromZebra = true
