@@ -48,6 +48,20 @@ module bgp-gobgp {
     }
   }
 
+  typedef aigp-session-type {
+    type enumeration {
+      enum DEFAULT {
+        description "enable if IBGP, otherwise disable";
+      }
+      enum ENABLE {
+        description "AIGP enable regardless of session type";
+      }
+      enum DISABLE {
+        description "AIGP disable regardless of session type";
+      }
+    }
+  }
+
   grouping gobgp-message-counter {
     description
       "Counters for all BGPMessage types";
@@ -446,6 +460,24 @@ module bgp-gobgp {
     }
   }
 
+  grouping gobgp-aigp-config {
+    description "AIGP configuration";
+
+    leaf aigp-session {
+      type gobgp:aigp-session-type;
+      default DEFAULT;
+      description
+        "AIGP session configuration";
+    }
+
+    leaf aigp-originate {
+      type boolean;
+      default "false";
+      description
+        "configuration to originate AIGP path attribute. If it's false, no AIGP path attribute is attached";
+    }
+  }
+
   // augment statements
   augment "/bgp:bgp/bgp:neighbors/bgp:neighbor/bgp:state/bgp:messages/bgp:sent" {
     description "additional counters";
@@ -659,5 +691,10 @@ module bgp-gobgp {
           type uint32;
       }
     }
+  }
+
+  augment "/bgp:bgp/bgp:neighbors/bgp:neighbor/bgp:config" {
+    description "aigp session configuration for neighbor";
+    uses gobgp-aigp-config;
   }
 }

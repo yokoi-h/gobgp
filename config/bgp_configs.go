@@ -112,6 +112,15 @@ const (
 	BGP_SET_COMMUNITY_OPTION_TYPE_REPLACE
 )
 
+// typedef for typedef gobgp:aigp-session-type
+type AigpSessionType int
+
+const (
+	AIGP_SESSION_TYPE_DEFAULT AigpSessionType = iota
+	AIGP_SESSION_TYPE_ENABLE
+	AIGP_SESSION_TYPE_DISABLE
+)
+
 // typedef for typedef gobgp:rpki-validation-result-type
 type RpkiValidationResultType int
 
@@ -746,6 +755,11 @@ type NeighborConfig struct {
 	// original -> bgp:neighbor-address
 	//bgp:neighbor-address's original type is inet:ip-address
 	NeighborAddress net.IP
+	// original -> gobgp:aigp-session
+	AigpSession AigpSessionType
+	// original -> gobgp:aigp-originate
+	//gobgp:aigp-originate's original type is boolean
+	AigpOriginate bool
 }
 
 //struct for container bgp:neighbor
