@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package proto;
+
+service CountService {
+  rpc MonitorCount(Request) returns (stream Count) {};
+  rpc AddCount(Count) returns (Error) {};
+}
+
+message Request {
+}
+
+message Error {
+  int32 code = 1;
+}
+
+message Count {
+  int32 number = 1;
+}
