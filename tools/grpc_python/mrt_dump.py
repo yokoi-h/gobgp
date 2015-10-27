@@ -50,11 +50,13 @@ def run(gobgpd, resource, args):
             dumps = stub.GetMrt(a, _TIMEOUT_SECONDS)
             print("done")
             for dump in dumps:
+                print("done2")
                 ts = datetime.now().strftime("%Y%m%d_%H%M%S")
                 filename = "rib_%s_%s" % (af, ts)
                 print(filename)
                 print(dump.data)
 
+            print("done3")
         except Exception as err:
             print 'exception:', err
             sys.exit(1)
