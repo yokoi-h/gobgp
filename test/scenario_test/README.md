@@ -10,41 +10,57 @@ Setup
 -----
 Execute the following commands inside the VM:
 
-install the python packages and libraries required to run the test program and clone gobgp repository.
-```
-% sudo su -
-# apt-get update
-# apt-get install git
-# apt-get install python-pip
-# apt-get install python-dev
-# git clone https://github.com/osrg/gobgp.git
-# cd ./gobgp
-# GOBGP_DIR=`pwd`
-# cd $GOBGP_DIR/gobgpd
-# go get -v
-# cd $GOBGP_DIR/test/scenario_test
-# pip install -r pip-requires.txt
+- ##### 1. Install and setting the packages required to run the scenario test.
+```shell
+$ sudo apt-get update
+$ sudo apt-get install git python-pip python-dev iputils-arping bridge-utils lv
+$ sudo wget https://raw.github.com/jpetazzo/pipework/master/pipework -O /usr/local/bin/pipework
+$ sudo chmod 755 /usr/local/bin/pipework
+$ sudo apt-key adv --keyserver hkp://pgp.mit.edu:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
+$ sudo apt-get install docker-engine
+$ gpasswd -a `whoami` docker
 ```
 
 
-This step installs other packages such as Docker container and generates some helper scripts needed by the scenario test.
+- ##### 2. Get each docker image from Docker Hub.
+```shell
+$ sudo docker pull osrg/golang:1.5
+$ sudo docker pull osrg/quagga
+$ sudo docker pull osrg/gobgp
 ```
-# fab -f docker_control.py install_docker_and_tools
 
+- ##### 3. Download gobgp and install python libraries.
+```shell
+$ git clone https://github.com/osrg/gobgp.git
+$ cd ./gobgp
+$ GOBGP_DIR=`pwd`
+$ cd ${GOBGP_DIR}/test/scenario_test
+$ pip install -r pip-requires.txt
 ```
-
-Please make sure following packages are installed properly inside the VM.
-
- * docker
- * bridge-utils
- * pipework
 
 
 Start
 -----
 Please run the test script as root.
 
+```shell
+bgp_router_test.py
+bgp_zebra_test.py
+evpn_test.py
+flow_spec_test.py
+global_policy_test.py
+ibgp_router_test.py
+route_reflector_test.py
+route_server_ipv4_v6_test.py
+route_server_policy_grpc_test.py
+route_server_policy_test.py
+route_server_test.py
+
+run_all_tests.sh
+```
+
  * route_server_test.py is scenario test script.
+
 ```
 # python route_server_test.py -v [ --use-local ] [--go-path=<path>]
 
@@ -52,12 +68,14 @@ Please run the test script as root.
 
 
  * If you want to do malformed packet test, please run route_server_malformed_test.py
+
 ```
 # python route_server_malformed_test.py -v [ --use-local ] [ --go-path=<path> ]
 
 ```
 
 - If you want to do scenario test in ipv4 and ipv6 mixed environment, please run route_server_ipv4_v6_test.py
+
 ```
 # python route_server_ipv4_v6_test.py -v [ --use-local ] [ --go-path=<path> ]
 
