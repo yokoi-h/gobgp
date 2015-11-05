@@ -43,39 +43,39 @@ Server:
 Execute the following commands inside the VM to install the dependencies:
 
 1. Install pip and [pipework](https://github.com/jpetazzo/pipework).
-```shell
-$ sudo apt-get update
-$ sudo apt-get install git python-pip python-dev iputils-arping bridge-utils lv
-$ sudo wget https://raw.github.com/jpetazzo/pipework/master/pipework -O /usr/local/bin/pipework
-$ sudo chmod 755 /usr/local/bin/pipework
-```
+
+ ```shell
+ $ sudo apt-get update
+ $ sudo apt-get install git python-pip python-dev iputils-arping bridge-utils lv
+ $ sudo wget https://raw.github.com/jpetazzo/pipework/master/pipework -O /usr/local/bin/pipework
+ $ sudo chmod 755 /usr/local/bin/pipework
+ ```
+ <br>
+
+1. Get docker images.
+ Download docker images pertaining to GoBGP testing.
+
+ ```shell
+ $ sudo docker pull golang:1.5
+ $ sudo docker pull osrg/quagga
+ $ sudo docker pull osrg/gobgp
+ ```
+ <br>
+
+1. Clone gobgp and install python libraries.
+
+ ```shell
+ $ mkdir -p $GOPATH/src/github.com/osrg
+ $ cd $GOPATH/src/github.com/osrg
+ $ git clone https://github.com/osrg/gobgp.git
+ $ cd ./gobgp/test/scenario_test
+ $ sudo pip install -r pip-requires.txt
+ ```
 <br>
-
-2. Get docker images.
-Download docker images pertaining to GoBGP testing.
-
-```shell
-$ sudo docker pull golang:1.5
-$ sudo docker pull osrg/quagga
-$ sudo docker pull osrg/gobgp
-```
-<br>
-
-
-3. Clone gobgp and install python libraries.
-```shell
-$ mkdir -p $GOPATH/src/github.com/osrg
-$ cd $GOPATH/src/github.com/osrg
-$ git clone https://github.com/osrg/gobgp.git
-$ cd ./gobgp/test/scenario_test
-$ sudo pip install -r pip-requires.txt
-```
-<br>
-
 
 ## <a name="section2"> Install local source code
-You need to install local source code into gobgp docker container if you modified the code and want to test it.
-You also need this installation on every testing.
+You need to install local source code into gobgp docker container.
+You also need this installation every testing.
 
 ```
 $ cd $GOPATH/src/github.com/osrg/gobgp
