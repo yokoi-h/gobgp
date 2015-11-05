@@ -75,7 +75,7 @@ Execute the following commands inside the VM to install the dependencies:
 
 ## <a name="section2"> Install local source code
 You need to install local source code into gobgp docker container.
-You also need this installation every testing.
+You also need this operation at every modification to the source code.
 
 ```
 $ cd $GOPATH/src/github.com/osrg/gobgp
