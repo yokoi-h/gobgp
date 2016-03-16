@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from fabric.api import local, lcd
+from fabric.api import local, lcd, warn_only
 from fabric import colors
 from fabric.utils import indent
 from fabric.state import env
@@ -207,10 +207,14 @@ class Container(object):
         self.ip_addrs.append((intf_name, ip_addr, bridge.name))
         try_several_times(lambda :local(str(c)))
 
-    def local(self, cmd, capture=False, flag=''):
-        return local("docker exec {0} {1} {2}".format(flag,
-                                                      self.docker_name(),
-                                                      cmd), capture)
+    def local(self, cmd, capture=False, flag='', warn_only=False):
+
+        cmd = "docker exec {0} {1} {2}".format(flag, self.docker_name(), cmd)
+        if warn_only:
+            with warn_only():
+                return local(cmd, capture)
+        else:
+            return local(cmd, capture)
 
     def get_pid(self):
         if self.is_running:
