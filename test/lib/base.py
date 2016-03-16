@@ -207,10 +207,10 @@ class Container(object):
         self.ip_addrs.append((intf_name, ip_addr, bridge.name))
         try_several_times(lambda :local(str(c)))
 
-    def local(self, cmd, capture=False, flag='', warn_only=False):
+    def local(self, cmd, capture=False, flag='', warning_only=False):
 
         cmd = "docker exec {0} {1} {2}".format(flag, self.docker_name(), cmd)
-        if warn_only:
+        if warning_only:
             with warn_only():
                 return local(cmd, capture)
         else:
