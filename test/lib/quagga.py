@@ -271,4 +271,3 @@ class QuaggaBGPContainer(BGPContainer):
                 raise Exception('reload_config error. errmsg: %s' % errmsg)
 
 
-
