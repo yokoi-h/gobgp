@@ -13,6 +13,10 @@ echo "Docker version"
 docker version
 echo ""
 
+echo "--------------------------------------------------------------------------------"
+sudo ls -al /var/log/
+echo "--------------------------------------------------------------------------------"
+
 export GOBGP_IMAGE=gobgp
 export GOBGP=`pwd`
 
