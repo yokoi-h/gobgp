@@ -271,4 +271,3 @@ class QuaggaBGPContainer(BGPContainer):
                 errmsg = "ret_code:%s, stdout:%s, stderr:%s" % (return_code, getattr(m, 'stdout'), getattr(m, 'stderr'))
                 raise Exception('reload_config error. errmsg: %s' % errmsg)
 
-
