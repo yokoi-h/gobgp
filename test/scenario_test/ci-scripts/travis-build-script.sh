@@ -16,6 +16,7 @@ echo ""
 echo "--------------------------------------------------------------------------------"
 sudo ls -al /var/log/upstart
 sudo cat /var/log/upstart/network-interface-eth0.log
+sudo ip a
 echo "--------------------------------------------------------------------------------"
 
 export GOBGP_IMAGE=gobgp
