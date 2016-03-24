@@ -261,7 +261,8 @@ class QuaggaBGPContainer(BGPContainer):
         if self.zebra:
             daemon.append('zebra')
         for d in daemon:
-            cmd = '/usr/bin/pkill {0} -SIGHUP'.format(d)
+            #cmd = '/usr/bin/pkill {0} -SIGHUP'.format(d)
+            cmd = 'supervisorctl restart {0}'.format(d)
             m = self.local(cmd, capture=True, ignore_error=True)
             return_code = getattr(m, 'return_code')
             if return_code != 0:
