@@ -18,6 +18,8 @@ sudo ls -al /var/log/upstart
 sudo cat /var/log/upstart/network-interface-eth0.log
 sudo ip a
 sudo cat /var/log/upstart/google_run_shutdown_scripts.log
+echo "hostname"
+sudo hostaname
 echo "--------------------------------------------------------------------------------"
 
 export GOBGP_IMAGE=gobgp
