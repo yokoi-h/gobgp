@@ -261,11 +261,9 @@ class QuaggaBGPContainer(BGPContainer):
         if self.zebra:
             daemon.append('zebra')
         for d in daemon:
-            try:
-                cmd = '/usr/bin/pkill {0} -SIGHUP'.format(d)
-                self.local(cmd, capture=True)
-            except RuntimeError as e:
-                print("exeption message:", e.message)
+            cmd = '/usr/bin/pkill {0} -SIGHUP'.format(d)
+            self.local(cmd, capture=True)
+
             # return_code = getattr(m, 'return_code')
             # if return_code != 0:
             #     errmsg = "ret_code:%s, stdout:%s, stderr:%s" % (return_code, getattr(m, 'stdout'), getattr(m, 'stderr'))
