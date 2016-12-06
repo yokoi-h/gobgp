@@ -822,8 +822,6 @@ func (lhs *regExpSet) Append(arg DefinedSet) error {
 		list = arg.(*AsPathSet).list
 	case DEFINED_TYPE_COMMUNITY:
 		list = arg.(*CommunitySet).list
-	case DEFINED_TYPE_EXT_COMMUNITY:
-		list = arg.(*ExtCommunitySet).list
 	case DEFINED_TYPE_LARGE_COMMUNITY:
 		list = arg.(*LargeCommunitySet).list
 	default:
@@ -1088,6 +1086,14 @@ func NewExtCommunitySet(c config.ExtCommunitySet) (*ExtCommunitySet, error) {
 		},
 		subtypeList: subtypeList,
 	}, nil
+}
+
+func (s *ExtCommunitySet) Append(arg DefinedSet) error {
+	list := arg.(*ExtCommunitySet).list
+	subList := arg.(*ExtCommunitySet).subtypeList
+	s.list = append(s.list, list...)
+	s.subtypeList = append(s.subtypeList, subList...)
+	return nil
 }
 
 type LargeCommunitySet struct {
