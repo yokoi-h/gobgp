@@ -376,19 +376,10 @@ func (cli *GoBGPClient) deletePath(uuid []byte, f bgp.RouteFamily, vrfID string,
 	switch {
 	case len(pathList) != 0:
 		for _, path := range pathList {
-			nlri := path.GetNlri()
-			n, err := nlri.Serialize()
-			if err != nil {
-				return err
-			}
-			p := &api.Path{
-				Nlri:   n,
-				Family: uint32(path.GetRouteFamily()),
-			}
 			reqs = append(reqs, &api.DeletePathRequest{
 				Resource: resource,
 				VrfId:    vrfID,
-				Path:     p,
+				Path:     api.ToPathApi(path),
 			})
 		}
 	default:
