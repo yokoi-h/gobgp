@@ -80,6 +80,7 @@ def visit_modules(ctx):
 
     # visit typedef and identity
     for module in ctx.module_deps:
+        # print('module', module.arg)
         visit_typedef(ctx, module)
         visit_identity(ctx, module)
 
@@ -201,7 +202,8 @@ def emit_class_def(ctx, yang_statement, struct_name, prefix):
             else:
                 base_module = type_obj.i_orig_module.i_prefix
                 t = lookup_typedef(ctx, base_module, type_name)
-                # print(t)
+                # print("type_name", type_name)
+                # print("t", t)
                 emit_type_name = t.golang_name
 
         # case 'case'
@@ -240,6 +242,7 @@ def emit_class_def(ctx, yang_statement, struct_name, prefix):
             else:
                 base_module = type_obj.i_orig_module.i_prefix
                 t = lookup_typedef(ctx, base_module, type_name)
+                # print('type_name', type_name)
                 emit_type_name = '[]'+t.golang_name
 
         # case container
@@ -449,9 +452,21 @@ def visit_typedef(ctx, module):
     for stmts in module.substmts:
         if stmts.keyword == 'typedef':
             stmts.path = get_path(stmts)
+
+            # print("stmts.type", get_type_spec(stmts))
+            # print("emit_typedef", t.arg)
+            # print("stmt.i_leafref", stmt.i_leafref)
+            # leafref = stmt.i_leafref
+            # show(leafref)
+            # show(leafref.i_target_node)
+            # ty = leafref.i_target_node.search_one("type")
+
+
             # print(stmts.path)
             name = stmts.arg
             stmts.golang_name = convert_to_golang(name)
+            # print("child_map[name]", name)
+            # print("stmts.golang_name", stmts.golang_name)
             child_map[name] = stmts
 
     ctx.golang_typedef_map[prefix] = child_map
@@ -569,6 +584,15 @@ def emit_enum(prefix, name, stmt, substmts):
 
         print o.getvalue()
 
+def get_target_type(leafref):
+
+    target_node = leafref.i_target_node
+    target_type = target_node.search_one("type")
+    if target_type.arg == 'leafref':
+        return get_target_type(target_node.i_leafref)
+    else:
+        return target_type
+
 
 def emit_typedef(ctx, module):
     prefix = module.i_prefix
@@ -603,20 +627,50 @@ def emit_typedef(ctx, module):
             print >> o, '// typedef for typedef %s:%s'\
                         % (prefix, type_name_org)
             print >> o, 'type %s string' % (type_name)
+        elif t.arg == 'leafref':
+            target_type = get_target_type(stmt.i_leafref)
+            # print("target_type.arg", target_type.arg)
+            if not is_builtin_type(target_type):
+                m = ctx.golang_typedef_map
+                for k in target_type.arg.split(':'):
+                    m = m[k]
+
+                print >> o, 'type %s %s' % (type_name, m.golang_name)
+            else:
+                print >> o, 'type %s %s' % (type_name, target_type.arg)
         else:
             print >> o, '// typedef for typedef %s:%s'\
                         % (prefix, type_name_org)
 
             if not is_builtin_type(t):
                 m = ctx.golang_typedef_map
-                for k in t.arg.split(':'):
-                    m = m[k]
-                print >> o, 'type %s %s' % (type_name, m.golang_name)
+                # print("stmt.arg", stmt.arg)
+                # print("stmt.path", stmt.path)
+                # print("stmt.type", get_type_spec(stmt))
+                # print("emit_typedef", t.arg)
+                # print("stmt.i_leafref", stmt.i_leafref)
+                # leafref = stmt.i_leafref
+                # show(leafref)
+
+                if is_translation_required(t):
+                    emit_type_name = translate_type(t)
+                    print >> o, 'type %s %s' % (type_name, emit_type_name.arg)
+                else:
+                    for k in t.arg.split(':'):
+                        # print("k", k)
+                        m = m[k]
+                    print >> o, 'type %s %s' % (type_name, m.golang_name)
             else:
                 print >> o, 'type %s %s' % (type_name, t.arg)
 
         print o.getvalue()
 
+
+def show(obj):
+    print('----------------')
+    for k in dir(obj):
+        print(k, getattr(obj, k))
+    print('----------------')
 
 def emit_identity(ctx, module):
 
@@ -683,10 +737,15 @@ _type_translation_map = {
     'inet:ip-address': 'string',
     'inet:ip-prefix': 'string',
     'inet:ipv4-address': 'string',
+    'inet:ip-address-no-zone': 'string',
     'inet:as-number': 'uint32',
     'bgp-set-community-option-type': 'string',
     'inet:port-number': 'uint16',
     'yang:timeticks': 'int64',
+    'yang:counter64': 'uint64',
+    'yang:counter32': 'uint32',
+    'yang:date-and-time': 'string',
+    'yang:dotted-quad': 'string',
     'ptypes:install-protocol-type': 'string',
     'binary': '[]byte',
     'bgp-capability': 'bgp.ParameterCapabilityInterface',
@@ -709,6 +768,7 @@ _type_builtin = ["union",
 
 _module_excluded = ["ietf-inet-types",
                     "ietf-yang-types",
+                    "ietf-interface-types",
                     ]
 
 _path_exclude = ["/rpol:routing-policy/rpol:defined-sets/rpol:neighbor-sets/rpol:neighbor-set/rpol:neighbor",

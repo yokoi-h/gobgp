@@ -9,12 +9,13 @@ module gobgp {
 
   // import some basic types
   import openconfig-bgp { prefix bgp; }
-  import openconfig-bgp-types { prefix bgp-types; }
-  import openconfig-bgp-multiprotocol { prefix bgp-mp; }
+  import openconfig-bgp-types { prefix oc-bgp-types; }
+  //import openconfig-bgp-common-multiprotocol { prefix bgp-mp; }
   import openconfig-routing-policy {prefix rpol; }
-  import openconfig-policy-types {prefix ptypes; }
+  import openconfig-policy-types {prefix oc-pol-types; }
   import openconfig-bgp-policy {prefix bgp-pol; }
   import ietf-inet-types { prefix inet; }
+  import ietf-interfaces { prefix ietf-if; }
   import ietf-yang-types { prefix yang; }
 
   // meta
@@ -52,89 +53,89 @@ module gobgp {
   }
 
   identity eq {
-      base ptypes:attribute-comparison;
+      base oc-pol-types:ATTRIBUTE_COMPARISON;
   }
 
   identity ge {
-      base ptypes:attribute-comparison;
+      base oc-pol-types:ATTRIBUTE_COMPARISON;
   }
 
   identity le {
-      base ptypes:attribute-comparison;
+      base oc-pol-types:ATTRIBUTE_COMPARISON;
   }
 
   identity IPV4-MULTICAST {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "IPv4 multicast (AFI,SAFI = 1,2)";
     reference "RFC4760";
   }
 
   identity IPV6-MULTICAST {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "IPv4 multicast (AFI,SAFI = 1,2)";
     reference "RFC4760";
   }
 
   identity RTC {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "Route target membership (AFI,SAFI = 1,132)";
     reference "RFC4684";
   }
 
   identity IPV4-ENCAP {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "Encapsulation (AFI,SAFI = 1,7)";
     reference "RFC5512";
   }
 
   identity IPV6-ENCAP {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "Encapsulation (AFI,SAFI = 2,7)";
     reference "RFC5512";
   }
 
   identity IPV4-FLOWSPEC {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "IPv4 flowspec (AFI,SAFI = 1,133)";
     reference "RFC5575";
   }
 
   identity L3VPN-IPV4-FLOWSPEC {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "L3VPN IPv4 flowspec (AFI,SAFI = 1,134)";
     reference "RFC5575";
   }
 
   identity IPV6-FLOWSPEC {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "IPv6 flowspec (AFI,SAFI = 1,133)";
     reference "RFC5575";
   }
 
   identity L3VPN-IPV6-FLOWSPEC {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "L3VPN IPv6 flowspec (AFI,SAFI = 1,134)";
     reference "RFC5575";
   }
 
   identity L2VPN-FLOWSPEC {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "L2VPN flowspec (AFI,SAFI = 25,134)";
     reference "draft-ietf-idr-flowspec-l2vpn-03";
   }
 
   identity OPAQUE {
-    base bgp-types:afi-safi-type;
+    base oc-bgp-types:AFI_SAFI_TYPE;
     description
       "Opaque (AFI,SAFI = 16397,241)";
     reference "https://tools.ietf.org/html/draft-lapukhov-bgp-opaque-signaling-01";
@@ -257,7 +258,7 @@ module gobgp {
 
     leaf default-in-policy {
       type rpol:default-policy-type;
-      default REJECT-ROUTE;
+      default REJECT_ROUTE;
       description
         "explicitly set a default policy if no policy definition
         in the in-policy chain is satisfied.";
@@ -887,7 +888,7 @@ module gobgp {
 
   deviation "/rpol:routing-policy/rpol:policy-definitions/" +
     "rpol:policy-definition/rpol:statements/rpol:statement/" +
-    "rpol:conditions/bgp-pol:bgp-conditions/bgp-pol:route-type" {
+    "rpol:conditions/bgp-pol:bgp-conditions/bgp-pol:config/bgp-pol:route-type" {
     description "alternative route-type condition";
     deviate replace {
         type enumeration {
@@ -1013,7 +1014,7 @@ module gobgp {
     }
     leaf-list redistribute-route-type {
       type identityref {
-        base ptypes:install-protocol-type;
+        base oc-pol-types:INSTALL_PROTOCOL_TYPE;
       }
     }
     leaf version {
@@ -1083,7 +1084,7 @@ module gobgp {
   }
 
   augment "/bgp:bgp/bgp:global/bgp:afi-safis/bgp:afi-safi" {
-      uses bgp-mp:all-afi-safi-common;
+      uses bgp:bgp-common-mp-all-afi-safi-common;
   }
 
   grouping route-target-membership-config {
