@@ -15,7 +15,7 @@ module gobgp {
   import openconfig-policy-types {prefix oc-pol-types; }
   import openconfig-bgp-policy {prefix bgp-pol; }
   import ietf-inet-types { prefix inet; }
-  import ietf-interfaces { prefix ietf-if; }
+  import ietf-interfaces { prefix if; }
   import ietf-yang-types { prefix yang; }
 
   // meta
@@ -50,6 +50,10 @@ module gobgp {
         description "send both pre and post-policy routes";
       }
     }
+  }
+
+  identity interface-type {
+      base if:interface-type;
   }
 
   identity eq {
