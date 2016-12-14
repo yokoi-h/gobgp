@@ -10,7 +10,6 @@ module gobgp {
   // import some basic types
   import openconfig-bgp { prefix bgp; }
   import openconfig-bgp-types { prefix oc-bgp-types; }
-  //import openconfig-bgp-common-multiprotocol { prefix bgp-mp; }
   import openconfig-routing-policy {prefix rpol; }
   import openconfig-policy-types {prefix oc-pol-types; }
   import openconfig-bgp-policy {prefix bgp-pol; }
