@@ -573,15 +573,6 @@ def emit_enum(prefix, name, stmt, substmts):
 
         print o.getvalue()
 
-def get_target_type(leafref):
-
-    target_node = leafref.i_target_node
-    target_type = target_node.search_one("type")
-    if target_type.arg == 'leafref':
-        return get_target_type(target_node.i_leafref)
-    else:
-        return target_type
-
 
 def emit_typedef(ctx, module):
     prefix = module.i_prefix
